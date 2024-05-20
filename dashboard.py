@@ -3,8 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 st.sidebar.title('Interactive analysis of suppliers')
-data = pd.read_csv('filtered_hlavna_sorted_doplnena_final_euro.csv')
+data = pd.read_csv('uzlenzbytkypozberane.csv')
 data = data.sort_values('AucZac')
+
+bidy = pd.read_csv('data_auctionHIsim2024/T4_bidyHI simul2_2024.csv', sep=';', encoding='ISO-8859-1')
 # Group by 'Org' column and count rows
 org_counts = data.groupby('Org').size()
 top_orgs = org_counts.sort_values(ascending=False).head(10)
@@ -55,13 +57,32 @@ if column != 'Select an organization...':
             # Filter the data for the selected organization and subkategory
             filtered_data = category_data[category_data['Subkateg'] == subkategory]
             st.write("Data for the selected organization based on selected subcategory:")
+            unique_ids = filtered_data['UniqueID'].unique()
 
+            # Filter bidy based on these UniqueIDs
+            filtered_bidy = bidy[bidy['UniqueID'].isin(unique_ids)]
+
+            # Get unique IDParticipant values from the filtered bidy
+            id_participant_options = filtered_bidy['IDParticipant'].unique()
+
+            # Create a selectbox in the sidebar for IDParticipant
+            selected_id_participant = st.sidebar.selectbox('Select IDParticipant', id_participant_options)
             # Display the filtered data
             st.dataframe(filtered_data)
         else:
             # Display the data for the selected category without filtering by subcategory
             st.write("Data for the selected organization based on selected category:")
+            # Get unique UniqueIDs from category_data
+            unique_ids = category_data['UniqueID'].unique()
 
+            # Filter bidy based on these UniqueIDs
+            filtered_bidy = bidy[bidy['UniqueID'].isin(unique_ids)]
+
+            # Get unique IDParticipant values from the filtered bidy
+            id_participant_options = filtered_bidy['IDParticipant'].unique()
+
+            # Create a selectbox in the sidebar for IDParticipant
+            selected_id_participant = st.sidebar.selectbox('Select IDParticipant', id_participant_options)
             st.dataframe(category_data)
     container5 = st.container()
     with container5:
@@ -135,5 +156,31 @@ if column != 'Select an organization...':
         # Display the plot in Streamlit
         st.pyplot(fig2)
 
+    if enable_subkategory_search:
+        # Group data by 'Vitaz' and calculate the mean of 'Relativna Uspora'
+        average_relativna_uspora = filtered_data.groupby('Vitaz')['Relativna Uspora'].mean()
+    else :
+        average_relativna_uspora = category_data.groupby('Vitaz')['Relativna Uspora'].mean()
 
+    # Sort the series in descending order
+    sorted_average_relativna_uspora = average_relativna_uspora.sort_values(ascending=False)
+
+    # Count the number of UniqueIDs in bidy where ParticipantID is the selected ParticipantID
+    num_unique_ids_bidy = bidy[bidy['IDParticipant'] == int(selected_id_participant)]['UniqueID'].nunique()
+
+    # Count the number of UniqueIDs in data where Vitaz is the selected ParticipantID
+    num_unique_ids_data = data[data['Vitaz'] == int(selected_id_participant)]['UniqueID'].nunique()
+
+    # Calculate the success rate
+    success_rate = num_unique_ids_data / num_unique_ids_bidy
+    # Create a new container at the bottom
+    container6 = st.container()
+    with container6:
+        # Display the sorted series
+        st.write("Average 'Relativna Uspora' grouped by 'Vitaz' ordered by the biggest 'Relativna Uspora':")
+        st.dataframe(sorted_average_relativna_uspora)
+        with container6:
+            st.write(f"Number of UniqueIDs in bidy where ParticipantID is {selected_id_participant}: {num_unique_ids_bidy}")
+            st.write(f"Number of UniqueIDs in data where Vitaz is {selected_id_participant}: {num_unique_ids_data}")
+            st.write(f"Success rate for ParticipantID {selected_id_participant}: {success_rate}")
 

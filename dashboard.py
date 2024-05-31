@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 st.sidebar.title('Interactive analysis of suppliers')
 data = pd.read_csv('uzlenzbytkypozberane.csv')
 data = data.sort_values('AucZac')
@@ -28,6 +29,28 @@ if column == 'Select an organization...':
     container1 = st.container()
     with container1:
         st.pyplot(fig)
+
+    container8 = st.container()
+    with container8:
+        # Group the data by 'Vitaz'
+        grouped_data = data.groupby('Vitaz')
+        ru=grouped_data["Relativna Uspora"].mean()
+        # Group by 'ParticipantID' and count rows
+        participant_counts = bidy.groupby('IDParticipant').size()
+
+        # Count the number of unique 'UniqueID' for each 'ParticipantID'
+        unique_id_counts = bidy.groupby('IDParticipant')['UniqueID'].nunique()
+
+        # Display the results
+        print("Count of rows grouped by ParticipantID:")
+        print(participant_counts)
+        print("\nNumber of unique IDs where each participant participated:")
+        print(unique_id_counts)
+        print(participant_counts/unique_id_counts)# Select the attributes you are interested in
+
+        attributes = ['Relativna Uspora']  # replace with your attributes
+        data_selected = grouped_data[attributes]
+
 
 if column != 'Select an organization...':
 
@@ -133,8 +156,6 @@ if column != 'Select an organization...':
         # Display the pie charts in Streamlit
         st.pyplot(fig3)
 
-
-
     # Create a container for the line plot
     container4 = st.container()
     with container4:
@@ -162,25 +183,76 @@ if column != 'Select an organization...':
     else :
         average_relativna_uspora = category_data.groupby('Vitaz')['Relativna Uspora'].mean()
 
+    unique_vitaz = filtered_data['Vitaz'].unique()
+
+    # Filter the 'bidy' DataFrame based on whether 'IDParticipant' is in 'unique_vitaz'
+    filtered_bidy = bidy[bidy['IDParticipant'].isin(unique_vitaz)]
+
+    # Count the number of rows for each 'IDParticipant' in the filtered 'bidy' DataFrame
+    participant_counts = filtered_bidy.groupby('IDParticipant').size()
+
+    # Count the number of unique 'UniqueID' for each 'IDParticipant' in the filtered 'bidy' DataFrame
+    unique_id_counts = filtered_bidy.groupby('IDParticipant')['UniqueID'].nunique()
+    # Display the results
+    print("Count of rows grouped by ParticipantID:")
+    print(participant_counts)
+    print("\nNumber of unique IDs where each participant participated:")
+    print(unique_id_counts)
+    ppb = participant_counts / unique_id_counts
+    print(ppb)
+
     # Sort the series in descending order
     sorted_average_relativna_uspora = average_relativna_uspora.sort_values(ascending=False)
 
-    # Count the number of UniqueIDs in bidy where ParticipantID is the selected ParticipantID
-    num_unique_ids_bidy = bidy[bidy['IDParticipant'] == int(selected_id_participant)]['UniqueID'].nunique()
+    # Count the number of UniqueIDs in bidy for each 'IDParticipant' in 'filtered_bidy'
+    num_unique_ids_bidy = filtered_bidy.groupby('IDParticipant')['UniqueID'].nunique()
 
-    # Count the number of UniqueIDs in data where Vitaz is the selected ParticipantID
-    num_unique_ids_data = data[data['Vitaz'] == int(selected_id_participant)]['UniqueID'].nunique()
+    # Count the number of UniqueIDs in data where 'Vitaz' is in 'filtered_bidy'
+    num_unique_ids_data = data[data['Vitaz'].isin(filtered_bidy['IDParticipant'])].groupby('Vitaz')[
+        'UniqueID'].nunique()
 
-    # Calculate the success rate
+    # Calculate the success rate for each 'IDParticipant' in 'filtered_bidy'
     success_rate = num_unique_ids_data / num_unique_ids_bidy
+
+    # Display the success rate
+    print(success_rate)
+
+
     # Create a new container at the bottom
     container6 = st.container()
     with container6:
         # Display the sorted series
         st.write("Average 'Relativna Uspora' grouped by 'Vitaz' ordered by the biggest 'Relativna Uspora':")
-        st.dataframe(sorted_average_relativna_uspora)
-        with container6:
-            st.write(f"Number of UniqueIDs in bidy where ParticipantID is {selected_id_participant}: {num_unique_ids_bidy}")
-            st.write(f"Number of UniqueIDs in data where Vitaz is {selected_id_participant}: {num_unique_ids_data}")
-            st.write(f"Success rate for ParticipantID {selected_id_participant}: {success_rate}")
+
+        # Concatenate the two series into a DataFrame along the columns axis
+        combined_df = pd.concat([sorted_average_relativna_uspora, ppb,success_rate], axis=1)
+
+        # Rename the columns
+        combined_df.columns = ['Average Relativna Uspora', 'Priemerny pocet bidov na jednu aukciu','Success rate']
+
+        # Display the DataFrame in Streamlit
+        st.dataframe(combined_df)
+        # with container6:
+        #     st.write(f"Pocet ucasti {selected_id_participant}: {num_unique_ids_bidy}")
+        #     st.write(f"Pocet vitazstiev {selected_id_participant}: {num_unique_ids_data}")
+        #     st.write(f"Success rate for ParticipantID {selected_id_participant}: {success_rate}")
+
+    if enable_subkategory_search:
+        # Group data by 'Vitaz' and calculate the mean of 'Relativna Uspora'
+        average_relativna_uspora_graf = filtered_data.groupby('AucZac')['Relativna Uspora'].mean()
+    else :
+        average_relativna_uspora_graf = category_data.groupby('AucZac')['Relativna Uspora'].mean()
+    container7 = st.container()
+    with container7:
+        # Create a plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(average_relativna_uspora_graf)
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Average Relativna Uspora')
+        ax.set_title(f'Average Relativna Uspora over time for category: {category} and subcategory: {subkategory}')
+        ax.grid(True)
+
+        # Display the plot in Streamlit
+        st.pyplot(fig)
+
 

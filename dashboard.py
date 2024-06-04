@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 st.sidebar.title('Interactive analysis of suppliers')
-data = pd.read_csv('uzlenzbytkypozberane.csv')
+ctyps = {'Vitaz': str}
+data = pd.read_csv('new_hlavna.csv',dtype=ctyps)
 data = data.sort_values('AucZac')
-
-bidy = pd.read_csv('data_auctionHIsim2024/T4_bidyHI simul2_2024.csv', sep=';', encoding='ISO-8859-1')
+column_types = {'IDParticipant': str, 9:str}
+bidy = pd.read_csv('new_bidy.csv',dtype=column_types)
 # Group by 'Org' column and count rows
 org_counts = data.groupby('Org').size()
 top_orgs = org_counts.sort_values(ascending=False).head(10)
@@ -30,26 +31,26 @@ if column == 'Select an organization...':
     with container1:
         st.pyplot(fig)
 
-    container8 = st.container()
-    with container8:
-        # Group the data by 'Vitaz'
-        grouped_data = data.groupby('Vitaz')
-        ru=grouped_data["Relativna Uspora"].mean()
-        # Group by 'ParticipantID' and count rows
-        participant_counts = bidy.groupby('IDParticipant').size()
-
-        # Count the number of unique 'UniqueID' for each 'ParticipantID'
-        unique_id_counts = bidy.groupby('IDParticipant')['UniqueID'].nunique()
-
-        # Display the results
-        print("Count of rows grouped by ParticipantID:")
-        print(participant_counts)
-        print("\nNumber of unique IDs where each participant participated:")
-        print(unique_id_counts)
-        print(participant_counts/unique_id_counts)# Select the attributes you are interested in
-
-        attributes = ['Relativna Uspora']  # replace with your attributes
-        data_selected = grouped_data[attributes]
+    # container8 = st.container()
+    # with container8:
+    #     # Group the data by 'Vitaz'
+    #     grouped_data = data.groupby('Vitaz')
+    #     ru=grouped_data["Relativna Uspora"].mean()
+    #     # Group by 'ParticipantID' and count rows
+    #     participant_counts = bidy.groupby('IDParticipant').size()
+    #
+    #     # Count the number of unique 'UniqueID' for each 'ParticipantID'
+    #     unique_id_counts = bidy.groupby('IDParticipant')['UniqueID'].nunique()
+    #
+    #     # Display the results
+    #     # print("Count of rows grouped by ParticipantID:")
+    #     # print(participant_counts)
+    #     # print("\nNumber of unique IDs where each participant participated:")
+    #     # print(unique_id_counts)
+    #     # print(participant_counts/unique_id_counts)# Select the attributes you are interested in
+    #
+    #     attributes = ['Relativna Uspora']  # replace with your attributes
+    #     data_selected = grouped_data[attributes]
 
 
 if column != 'Select an organization...':
@@ -80,32 +81,32 @@ if column != 'Select an organization...':
             # Filter the data for the selected organization and subkategory
             filtered_data = category_data[category_data['Subkateg'] == subkategory]
             st.write("Data for the selected organization based on selected subcategory:")
-            unique_ids = filtered_data['UniqueID'].unique()
-
-            # Filter bidy based on these UniqueIDs
-            filtered_bidy = bidy[bidy['UniqueID'].isin(unique_ids)]
-
-            # Get unique IDParticipant values from the filtered bidy
-            id_participant_options = filtered_bidy['IDParticipant'].unique()
-
-            # Create a selectbox in the sidebar for IDParticipant
-            selected_id_participant = st.sidebar.selectbox('Select IDParticipant', id_participant_options)
+            # unique_ids = filtered_data['UniqueID'].unique()
+            #
+            # # Filter bidy based on these UniqueIDs
+            # filtered_bidy = bidy[bidy['UniqueID'].isin(unique_ids)]
+            #
+            # # Get unique IDParticipant values from the filtered bidy
+            # id_participant_options = filtered_bidy['IDParticipant'].unique()
+            #
+            # # Create a selectbox in the sidebar for IDParticipant
+            # selected_id_participant = st.sidebar.selectbox('Select IDParticipant', id_participant_options)
             # Display the filtered data
             st.dataframe(filtered_data)
         else:
             # Display the data for the selected category without filtering by subcategory
             st.write("Data for the selected organization based on selected category:")
             # Get unique UniqueIDs from category_data
-            unique_ids = category_data['UniqueID'].unique()
-
-            # Filter bidy based on these UniqueIDs
-            filtered_bidy = bidy[bidy['UniqueID'].isin(unique_ids)]
-
-            # Get unique IDParticipant values from the filtered bidy
-            id_participant_options = filtered_bidy['IDParticipant'].unique()
-
-            # Create a selectbox in the sidebar for IDParticipant
-            selected_id_participant = st.sidebar.selectbox('Select IDParticipant', id_participant_options)
+            # unique_ids = category_data['UniqueID'].unique()
+            #
+            # # Filter bidy based on these UniqueIDs
+            # filtered_bidy = bidy[bidy['UniqueID'].isin(unique_ids)]
+            #
+            # # Get unique IDParticipant values from the filtered bidy
+            # id_participant_options = filtered_bidy['IDParticipant'].unique()
+            #
+            # # Create a selectbox in the sidebar for IDParticipant
+            # selected_id_participant = st.sidebar.selectbox('Select IDParticipant', id_participant_options)
             st.dataframe(category_data)
     container5 = st.container()
     with container5:
@@ -177,29 +178,26 @@ if column != 'Select an organization...':
         # Display the plot in Streamlit
         st.pyplot(fig2)
 
-    if enable_subkategory_search:
+
         # Group data by 'Vitaz' and calculate the mean of 'Relativna Uspora'
         average_relativna_uspora = filtered_data.groupby('Vitaz')['Relativna Uspora'].mean()
-    else :
-        average_relativna_uspora = category_data.groupby('Vitaz')['Relativna Uspora'].mean()
+
 
     unique_vitaz = filtered_data['Vitaz'].unique()
-
+    # Convert 'unique_vitaz' to string
+    # unique_vitaz = unique_vitaz.astype(str)
+    # print(unique_vitaz[0].dtype)
     # Filter the 'bidy' DataFrame based on whether 'IDParticipant' is in 'unique_vitaz'
     filtered_bidy = bidy[bidy['IDParticipant'].isin(unique_vitaz)]
 
     # Count the number of rows for each 'IDParticipant' in the filtered 'bidy' DataFrame
     participant_counts = filtered_bidy.groupby('IDParticipant').size()
-
+    # print(participant_counts)
     # Count the number of unique 'UniqueID' for each 'IDParticipant' in the filtered 'bidy' DataFrame
     unique_id_counts = filtered_bidy.groupby('IDParticipant')['UniqueID'].nunique()
     # Display the results
-    print("Count of rows grouped by ParticipantID:")
-    print(participant_counts)
-    print("\nNumber of unique IDs where each participant participated:")
-    print(unique_id_counts)
     ppb = participant_counts / unique_id_counts
-    print(ppb)
+    # Print unique values of unique_vitaz
 
     # Sort the series in descending order
     sorted_average_relativna_uspora = average_relativna_uspora.sort_values(ascending=False)
@@ -215,8 +213,14 @@ if column != 'Select an organization...':
     success_rate = num_unique_ids_data / num_unique_ids_bidy
 
     # Display the success rate
-    print(success_rate)
+    # print(success_rate)
+    combined_df = pd.concat(
+        [sorted_average_relativna_uspora, ppb, participant_counts, unique_id_counts, success_rate, num_unique_ids_data,
+         num_unique_ids_bidy], axis=1)
 
+    # Rename the columns
+    combined_df.columns = ['Priemerna relativna uspora', 'Priemerny pocet bidov na jednu aukciu', 'Celkovy pocet bidov',
+                           'Pocet zucastnenych aukcii', 'Success rate', 'Vyhral', 'Zucastnil sa']
 
     # Create a new container at the bottom
     container6 = st.container()
@@ -225,10 +229,7 @@ if column != 'Select an organization...':
         st.write("Average 'Relativna Uspora' grouped by 'Vitaz' ordered by the biggest 'Relativna Uspora':")
 
         # Concatenate the two series into a DataFrame along the columns axis
-        combined_df = pd.concat([sorted_average_relativna_uspora, ppb,success_rate], axis=1)
 
-        # Rename the columns
-        combined_df.columns = ['Average Relativna Uspora', 'Priemerny pocet bidov na jednu aukciu','Success rate']
 
         # Display the DataFrame in Streamlit
         st.dataframe(combined_df)
@@ -237,6 +238,50 @@ if column != 'Select an organization...':
         #     st.write(f"Pocet vitazstiev {selected_id_participant}: {num_unique_ids_data}")
         #     st.write(f"Success rate for ParticipantID {selected_id_participant}: {success_rate}")
 
+
+    container8 = st.container()
+    with container8:
+        from sklearn.decomposition import PCA
+        from sklearn.preprocessing import StandardScaler
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        # Select the attributes
+        attributes = ['Priemerna relativna uspora', 'Priemerny pocet bidov na jednu aukciu', 'Success rate']
+        selected_data = combined_df[attributes]
+
+        # Standardize the data
+        scaler = StandardScaler()
+        standardized_data = scaler.fit_transform(selected_data)
+
+        # Apply PCA
+        pca = PCA(n_components=2)
+        principal_components = pca.fit_transform(standardized_data)
+
+        # Create a DataFrame with the first two principal components
+        pca_df = pd.DataFrame(data=principal_components, columns=['PC1', 'PC2'])
+
+        # Calculate the distance from each point to the origin
+        distances = np.sqrt((pca_df['PC1'] ** 2) + (pca_df['PC2'] ** 2))
+
+        # Define a threshold for what you consider an outlier
+        threshold = np.percentile(distances, 95)  # 95th percentile, for example
+
+        # Create a boolean mask for the outliers
+        outliers_mask = distances > threshold
+
+        # Plot the first two principal components
+        plt.figure(figsize=(8, 6))
+        plt.scatter(pca_df['PC1'], pca_df['PC2'], c=outliers_mask)
+
+        # Add text next to each outlier dot using the index values from the DataFrame
+        for i in range(len(pca_df)):
+            plt.text(pca_df.iloc[i]['PC1'], pca_df.iloc[i]['PC2'], combined_df.index[i])
+
+        plt.xlabel('First Principal Component (PC1)')
+        plt.ylabel('Second Principal Component (PC2)')
+        plt.title('PCA of combined_df with Outliers')
+        st.pyplot(plt)
     if enable_subkategory_search:
         # Group data by 'Vitaz' and calculate the mean of 'Relativna Uspora'
         average_relativna_uspora_graf = filtered_data.groupby('AucZac')['Relativna Uspora'].mean()
